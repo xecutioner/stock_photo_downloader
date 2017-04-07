@@ -25,22 +25,23 @@ loop do
     file_url = URI(image.attr('href'))
     next if parsed_images.include?(file_url)
     parsed_images << file_url
-    count+=1
     filename = image.attr('href').split('/').last
+    destination_filename = "#{destination_directory}/#{filename}"
+    next if File.exists? destination_filename
     p "#{count}:  Downloading #{file_url} as #{filename}"
+    count+=1
     Net::HTTP.start(file_url.host,file_url.port , :use_ssl => true) do |http|
       response = http.request_head(file_url)
       pbr = ProgressBar.create(title: filename ,starting_at: 0,:total => response['content-length'].to_i, progress_mark: "=", format: "%w")
       counter = 0
-      File.open("#{destination_directory}/#{filename}","w") do |f|
+      File.open(destination_filename,"w") do |f|
         http.get(file_url) do |str|
           f.write str
           counter += str.length
-          pbr.progress += str.length
+          pbr.progress += str.length rescue puts "hello"
         end
       end
     end
-    # IO.copy_stream(open(file_url), )
   end
   break if browser.link(:text => "LOAD MORE").nil?
   browser.link(:text => "LOAD MORE").when_present.click
